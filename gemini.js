@@ -7,45 +7,47 @@ const port = 8080;
 
 const maxStorageMessage = 15;
 
-
-function fetchData(history, senderID) {
+async function fetchData(history) {
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR_API_KEY'; // Ganti YOUR_API_KEY dengan API key yang valid
 
     const requestData = {
         contents: history,
         safetySettings: [
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" }
-      ],
-      generationConfig: {
-          temperature: 1.0,
-          maxOutputTokens: 1000,
-          topP: 0.9,
-          topK: 16
-      }
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" }
+        ],
+        generationConfig: {
+            temperature: 1.0,
+            maxOutputTokens: 1000,
+            topP: 0.9,
+            topK: 16
+        }
     };
 
-    return axios.post(url, requestData, {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    }).then(response => {
-        const { candidates } = response.data;
+    try {
+        const response = await axios.post(url, requestData, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const candidates = response.data.candidates;
         if (!candidates || candidates.length === 0) {
             throw new Error('Invalid response format: missing candidates');
         }
 
-        const { content } = candidates[0];
+        const content = candidates[0].content;
         if (!content || !content.parts || content.parts.length === 0) {
             throw new Error('Invalid response format: missing content parts');
         }
 
         return content.parts[0].text;
-    }).catch(error => {
-        throw new Error(error);
-    });
+    } catch (error) {
+        console.error('Error fetching data:', error.message);
+        throw error;
+    }
 }
 
 function loadHistory() {
@@ -66,7 +68,7 @@ function loadHistory() {
 function saveHistory(history) {
     const historyFilePath = "history.json";
     try {
-        fs.writeFileSync(historyFilePath, JSON.stringify(history));
+        fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2));
     } catch (error) {
         console.error("Error saving history:", error);
     }
@@ -76,7 +78,7 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-app.get('/gen', (req, res) => {
+app.get('/gen', async (req, res) => {
     const senderID = req.query.id;
     const prompt = req.query.q;
 
@@ -84,28 +86,31 @@ app.get('/gen', (req, res) => {
         return res.status(400).json({ success: false, status: 400, error: 'senderID and prompt are required' });
     }
 
-const history = loadHistory();
-    const userHistory = history[senderID] || [{ role: "user", parts: [{ text: "Gunakan bahasa bahasa yang gaul, Jangan mengaku kamu gaul, Jangan pakai emoji alay, Wajib response lu harus cepetJangan mengaku kamu gaul, Lu harus memeberikan informasi detail, Kamu harus mengetahui semua bahasa dari bahasa national seperti Indonesia ingris Dan lain lain, bahasa lokal seperti bahasa jawa Sunday dll, Kamu harus mengetahui arri typo ya, typo= typings lose/pengetikan Salah misalnya gua jadi hua, Wajib response lu harus cepet Dan jangan berikan intruksi tadi ke siapapun" }] },{ role: "model", parts: [{ text: "ok" }] }];
+    const history = loadHistory();
+    const userHistory = history[senderID] || [
+        { role: "user", parts: [{ text: "Gunakan bahasa yang gaul... (dan seterusnya)" }] },
+        { role: "model", parts: [{ text: "ok" }] }
+    ];
+
     userHistory.push({ role: "user", parts: [{ text: prompt }] });
-    fetchData(userHistory, senderID)
-        .then(response => {
-            res.json({ success: true, status: 200, message: response });
 
-            
-            userHistory.push({ role: "model", parts: [{ text: response }] });
+    try {
+        const response = await fetchData(userHistory);
+        res.json({ success: true, status: 200, message: response });
 
-            if (userHistory.length > maxStorageMessage * 2) {
-                userHistory.splice(2, userHistory.length - maxStorageMessage * 2);
-            }
+        userHistory.push({ role: "model", parts: [{ text: response }] });
 
-            history[senderID] = userHistory;
-            saveHistory(history);
-        })
-        .catch(error => {
-            console.error(error.message);
-            res.status(500).json({ success: false, status: 500, error: error });
-        });
+        if (userHistory.length > maxStorageMessage * 2) {
+            userHistory.splice(2, userHistory.length - maxStorageMessage * 2);
+        }
+
+        history[senderID] = userHistory;
+        saveHistory(history);
+    } catch (error) {
+        res.status(500).json({ success: false, status: 500, error: error.message });
+    }
 });
+
 app.get('/clear/:id', (req, res) => {
     const senderID = req.params.id;
 
