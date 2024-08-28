@@ -12,6 +12,7 @@ function fetchData(history, senderID) {
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=YOUR_API_KEY'; // Ganti YOUR_API_KEY dengan API key yang valid
 
     const requestData = {
+        contents: history,
         safetySettings: [
           { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
           { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
