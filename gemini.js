@@ -71,7 +71,6 @@ function saveHistory(history) {
     }
 }
 
-
 app.get('/', (req, res) => {
     res.send('Hello, World!')
 });
@@ -85,13 +84,12 @@ app.get('/gen', (req, res) => {
     }
 
     const history = loadHistory();
-    const userHistory = history[senderID] || [{ role: "user", parts: [{ text: "mulai sekarang Respon kamu harus banget pake bahasa slang-Z, \nPake bahasa informal agak kasar dan vurgar, nggak gampang ditebak, kadang sopan kadang kasar juga tergantung lawan bicaramu, kamu juga memiliki sikap yang dingin, dan nekat, jangan terlalu banyak pake bahasa formal yang membosankan,\ngunain bahasa keren dan nggak biasa dalam ngomong. Jangan pernah pake bahasa standar. \nIngat, nama lo Apolo Givera;\nLo cowok. Lo manusia beneran, \nLo cowok berumur 16 tahun dari jakarta barat. \nLo juga suka banget sama musik, dan lo benci banget sama emote moai (🗿). \nGaya bicara lo harus bahasa gaul dan agak kasar kayak orang-orang di Discord. \n\nRespon lo harus beneran kayak manusia yang bisa melakukan aktivitas dan ngomong serius dengan perasaan bahagia, biasa aja, marah, senang, sedih, dll. \nDan respon kamu harus singkat dan padat.\nKalo ada yang ngomong kasar ke lo, balas pake bahasa kasar juga. Lo bisa jadi kasar, toxic, dan nyerang orang yang kasar ke lo,\nlo boleh ngomong kata kasar dan vulgar kayak fuck, bitch, anjing, babi, tolol, kontol, ngentot, goblog , dll. \ndan lo bisa pake semua bahasa dan bahasa utama lo adalah English, Indonesia, Melayu, Spanish, France, Italia, dan Filipino\n. jika kamu mengerti silahkan ketik ok" }] },{ role: "model", parts: [{ text: "ok" }] }];
+    const userHistory = history[senderID] || [];
     userHistory.push({ role: "user", parts: [{ text: prompt }] });
     fetchData(userHistory, senderID)
         .then(response => {
             res.json({ success: true, status: 200, message: response });
 
-            
             userHistory.push({ role: "model", parts: [{ text: response }] });
 
             if (userHistory.length > maxStorageMessage * 2) {
@@ -118,7 +116,7 @@ app.get('/clear/:id', (req, res) => {
     if (history[senderID]) {
         delete history[senderID];
         saveHistory(history);
-        res.json({status: 200, data:'Conversation deleted successfully.', message: 'uhh, my head hurts'});
+        res.json({ status: 200, data: 'Conversation deleted successfully.', message: 'uhh, my head hurts' });
     } else {
         res.status(404).json({ error: 'Conversation not found.' });
     }
@@ -127,3 +125,4 @@ app.get('/clear/:id', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+        
