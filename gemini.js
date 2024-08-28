@@ -8,7 +8,7 @@ const port = 8080;
 const maxStorageMessage = 15;
 
 function fetchData(history, senderID) {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyB1cnWasNGkMNzFXPpnXpbPYaqXTbZYSHM'; // Ganti YOUR_API_KEY dengan API key yang valid
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyAqQvxbL5eAL2b_FnTlmjvWl1mSizB7IBU'; // Ganti YOUR_API_KEY dengan API key yang valid
 
     const requestData = {
         contents: history,
